@@ -1,1 +1,1 @@
-Project 10 with CIFAR dataset. 
+Project 6 with CIFAR dataset. 
