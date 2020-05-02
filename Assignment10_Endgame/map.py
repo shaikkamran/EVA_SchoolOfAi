@@ -1,13 +1,15 @@
 # Self Driving Car
 
+import pickle
 import time
 from random import randint, random
-import pickle
+
+import cv2
+import imutils
 import matplotlib.pyplot as plt
 # Importing the libraries
 import numpy as np
-import imutils
-import cv2
+import torch
 # Importing the Kivy packages
 from kivy.app import App
 from kivy.clock import Clock
@@ -22,9 +24,10 @@ from kivy.uix.widget import Widget
 from kivy.vector import Vector
 from PIL import Image as PILImage
 
-from td3 import TD3,ReplayBuffer
+from logger import get_logger
+from td3 import TD3, ReplayBuffer
 
-import torch 
+logger = get_logger("./")
 
 action_dim=1
 orientation_dim=1
@@ -121,7 +124,7 @@ def add_padding(img,resize_shape):
     else:
         height_1,height_2=height,height
     
-    # print(width_1,width_2,height_1,height_2)
+    # logger.info(width_1,width_2,height_1,height_2)
 
     return cv2.copyMakeBorder(img,(to_height-height_1)//2,(to_height-height_2)//2,(to_width-width_1)//2,(to_width-width_2)//2,cv2.BORDER_CONSTANT, value=0)
 
@@ -182,17 +185,17 @@ class Car(Widget):
         global sand_coordinates
         no=randint(20000,len(sand_coordinates[0]))
         
-        # print(f"got={sand_coordinates[0][no]}{sand_coordinates[1][no]}")
+        # logger.info(f"got={sand_coordinates[0][no]}{sand_coordinates[1][no]}")
         self.x=int(sand_coordinates[0][no])
         self.y=int(sand_coordinates[1][no])
         
 
     def move(self, rotation):
 
-        print(f"rotation is {rotation}")
+        # logger.info(f"rotation is {rotation}")
         self.pos = Vector(*self.velocity) + self.pos
         self.rotation = rotation
-        print(self.angle,self.rotation,"==========")
+        # logger.info(f"self.angle={self.angle}    self.rotation={self.rotation}")
         self.angle = self.angle + self.rotation
         self.sensor1 = Vector(30, 0).rotate(self.angle) + self.pos
         self.sensor2 = Vector(30, 0).rotate((self.angle+30)%360) + self.pos
@@ -278,15 +281,15 @@ class Game(Widget):
         if sand[int(self.car.x),int(self.car.y)] > 0:
             self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
             last_reward = -0.6
-            # print(1, goal_x, goal_y, distance, im.read_pixel(int(self.car.x),int(self.car.y)))
+            logger.info(f"1,{goal_x}{goal_y}, {distance}, {im.read_pixel(int(self.car.x),int(self.car.y))}")
             
         else: # otherwise
             
             self.car.velocity = Vector(2, 0).rotate(self.car.angle)
             last_reward = 0.1
-            print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
+            logger.info(f"0, {goal_x}, {goal_y}, {distance}, {int(self.car.x),int(self.car.y)}, {im.read_pixel(int(self.car.x),int(self.car.y))}")
         
-        # print(f"current last{last_orientation}========{orientation}")
+        # logger.info(f"current last{last_orientation}========{orientation}")
         if orientation==0.0:
             
             last_reward+=0.5
@@ -368,13 +371,13 @@ class Game(Widget):
                 # If we are not at the very beginning, we start the training process of the model
                 if total_timesteps != 0:
                 # if total_timesteps>=10000:
-                    print("Total Timesteps: {} Episode Num: {} Reward: {}".format(total_timesteps, episode_num, episode_reward))
+                    logger.info("Total Timesteps: {} Episode Num: {} Reward: {}".format(total_timesteps, episode_num, episode_reward))
                     # policy.train(replay_buffer, episode_timesteps, batch_size, discount, tau, policy_noise, noise_clip, policy_freq)
                     policy.train(replay_buffer,min(episode_timesteps,60), batch_size, discount, tau, policy_noise, noise_clip, policy_freq)
 
                 # We evaluate the episode and we save the policy
                 if timesteps_since_eval >= eval_freq:
-                    print("Saving the model")
+                    logger.info("Saving the model")
                     timesteps_since_eval %= eval_freq
                     # evaluations.append(evaluate_policy(policy))
                     file_name="car_t3d"+str(total_timesteps)
@@ -397,12 +400,12 @@ class Game(Widget):
         if total_timesteps < start_timesteps:
             # action = env.action_space.sample()
             # action=action2rotation[randint(0,2)]
-            print("Random Action from environment")
+            logger.info("Random Action from environment")
             action=self.chose_random_action()
         
         else: # After 10000 timesteps, we switch to the model
             # action = policy.select_action(np.array(obs))
-            print("Action from agent")
+            logger.info("Action from agent")
             o=np.array([orientation]).reshape(1,1)
             action=policy.select_action(convert_to_tensor(obs),torch.tensor(o,dtype=torch.float).to(device))
             # If the explore_noise parameter is not 0, we add noise to the action and we clip it
@@ -420,7 +423,7 @@ class Game(Widget):
         distance,reward,swap,done=self.calculate_reward(last_distance,reward,swap,orientation)
         last_distance = distance
 
-        print(f"iterations,distance,last_reward,swap,orientation,goal==\n{total_timesteps,distance,reward,swap,orientation,goal_x,goal_y}")
+        logger.info(f"Total Iterations={total_timesteps}\ndistance={distance}\nlast_reward={reward}\nswap={swap}\norientation{orientation}\ngoal_x,goal_y={goal_x} {goal_y}\nrotation={self.car.rotation}\nvelocity={self.car.velocity}\nangle={self.car.angle}")
         
         new_obs,orientation=self.get_state()
 
@@ -435,14 +438,8 @@ class Game(Widget):
         
         # We store the new transition into the Experience Replay memory (ReplayBuffer)
             
-        replay_buffer.add((obs,orientation/180.0,new_obs, action, reward, done_bool))
+        replay_buffer.add((obs,orientation,new_obs, action, reward, done_bool))
         
-        if total_timesteps==100:
-
-            import pickle
-            with open("replay.pkl","wb") as file:
-                pickle.dump(replay_buffer.storage,file)
-
         # We update the state, the episode timestep, the total timesteps, and the timesteps since the evaluation of the policy
         obs = new_obs
         episode_timesteps += 1
@@ -525,12 +522,12 @@ class CarApp(App):
         sand = np.zeros((longueur,largeur))
 
     def save(self, obj):
-        print("saving brain...")
+        logger.info("saving brain...")
         plt.plot(scores)
         plt.show()
 
     def load(self, obj):
-        print("loading last saved brain...")
+        logger.info("loading last saved brain...")
         
 
 # Running the whole thing

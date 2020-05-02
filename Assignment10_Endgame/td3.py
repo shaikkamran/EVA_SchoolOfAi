@@ -24,6 +24,20 @@ class conv_block(nn.Module):
     def forward(self,x):
         return self.convblock(x)
 
+class conv_block_without_relu(nn.Module):
+
+    def __init__(self,in_channels,out_channels,kernel_size=(3,3),dropout=0.1,**kwargs):
+        super(conv_block, self).__init__()
+        self.convblock = nn.Sequential(
+                nn.Conv2d(in_channels=in_channels,out_channels=out_channels,kernel_size=kernel_size,**kwargs),
+                nn.BatchNorm2d(out_channels),
+                nn.Dropout(p=dropout)
+            )
+        # self.out_channels=out_channels
+    def forward(self,x):
+        return self.convblock(x)
+
+
 
 class ReplayBuffer(object):
 
@@ -77,7 +91,7 @@ class Actor(nn.Module):
         self.conv_s2 = conv_block(in_channels=16,out_channels=24,padding=(self.p_h,self.p_w),stride=2)
         
         
-        self.conv3=conv_block(in_channels=24,out_channels=1,dropout=0.0,padding=(self.p_h,self.p_w))
+        self.conv3=conv_block_without_relu(in_channels=24,out_channels=1,dropout=0.0,padding=(self.p_h,self.p_w))
         
         print(f"self.height{self.height}")
         self.gap=nn.AvgPool2d(self.height)
@@ -134,7 +148,7 @@ class Critic(nn.Module):
         self.conv_s2 = conv_block(in_channels=16,out_channels=24,padding=(self.p_h,self.p_w),stride=2)
         
         
-        self.conv3=conv_block(in_channels=24,out_channels=1,dropout=0.0,padding=(self.p_h,self.p_w))
+        self.conv3=conv_block_without_relu(in_channels=24,out_channels=1,dropout=0.0,padding=(self.p_h,self.p_w))
         
         
         self.gap=nn.AvgPool2d(self.height)
@@ -162,7 +176,7 @@ class Critic(nn.Module):
         self.conv_s2_2 = conv_block(in_channels=16,out_channels=24,padding=(self.p_h,self.p_w),stride=2)
         
         
-        self.conv3_2=conv_block(in_channels=24,out_channels=1,dropout=0.0,padding=(self.p_h,self.p_w))
+        self.conv3_2=conv_block_without_relu(in_channels=24,out_channels=1,dropout=0.0,padding=(self.p_h,self.p_w))
         
         
         self.gap_2=nn.AvgPool2d(self.height)
