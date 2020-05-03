@@ -23,18 +23,21 @@ from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.vector import Vector
 from PIL import Image as PILImage
-
+import logging
 from logger import get_logger
-from td3 import TD3, ReplayBuffer
 
-logger = get_logger("./")
+logger = get_logger("./logs")
+logging.Logger.manager.root = logger
+from td3_small import TD3, ReplayBuffer
 
 action_dim=1
 orientation_dim=1
+out_channels=1
+critic_out_channels=1
 max_action=5
 state_size=(3,50,50)
 image_crop_size=100
-policy = TD3(state_size,action_dim, max_action,orientation_dim)
+policy = TD3(state_size,action_dim, max_action,orientation_dim,out_channels,critic_out_channels)
 
 replay_buffer=ReplayBuffer()
 # Adding this line if we don't want the right click to put a red point
@@ -80,13 +83,14 @@ policy_noise = 0.2 # STD of Gaussian noise added to the actions for the explorat
 noise_clip = 0.5 # Maximum value of the Gaussian noise added to the actions (policy)
 policy_freq = 2 
 
+
 total_timesteps = 0
 timesteps_since_eval = 0
 episode_num = 0
 done = True
 t0 = time.time()
 episode_timesteps=0
-max_episode_steps=1000
+max_episode_steps=2000
 
 
 def init():
@@ -188,7 +192,8 @@ class Car(Widget):
         # logger.info(f"got={sand_coordinates[0][no]}{sand_coordinates[1][no]}")
         self.x=int(sand_coordinates[0][no])
         self.y=int(sand_coordinates[1][no])
-        
+        f=abs(self.angle)
+        self.angle=randint(0,int(f))
 
     def move(self, rotation):
 
@@ -278,28 +283,23 @@ class Game(Widget):
         orientation=self.get_orientation()
 
         
+        distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
+        self.ball1.pos = self.car.sensor1
+        self.ball2.pos = self.car.sensor2
+        self.ball3.pos = self.car.sensor3
+
         if sand[int(self.car.x),int(self.car.y)] > 0:
             self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
-            last_reward = -0.6
-            logger.info(f"1,{goal_x}{goal_y}, {distance}, {im.read_pixel(int(self.car.x),int(self.car.y))}")
-            
+            print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
+            print(f"orientation{orientation}")
+            last_reward = -1
         else: # otherwise
-            
             self.car.velocity = Vector(2, 0).rotate(self.car.angle)
-            last_reward = 0.1
-            logger.info(f"0, {goal_x}, {goal_y}, {distance}, {int(self.car.x),int(self.car.y)}, {im.read_pixel(int(self.car.x),int(self.car.y))}")
-        
-        # logger.info(f"current last{last_orientation}========{orientation}")
-        if orientation==0.0:
-            
-            last_reward+=0.5
-
-
-        if distance < last_distance:
-            last_reward += 0.5
-        
-        else:
-            last_reward = last_reward +(-0.2)
+            last_reward = -0.2
+            print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
+            print(f"orientation{orientation}")
+            if distance < last_distance:
+                last_reward = 0.1
 
         if self.car.x < boundary_no:
             self.car.x = boundary_no
@@ -423,13 +423,15 @@ class Game(Widget):
         distance,reward,swap,done=self.calculate_reward(last_distance,reward,swap,orientation)
         last_distance = distance
 
-        logger.info(f"Total Iterations={total_timesteps}\ndistance={distance}\nlast_reward={reward}\nswap={swap}\norientation{orientation}\ngoal_x,goal_y={goal_x} {goal_y}\nrotation={self.car.rotation}\nvelocity={self.car.velocity}\nangle={self.car.angle}")
+        logger.info(f"Episode Timesteps={episode_timesteps}\nTotal Iterations={total_timesteps}\ndistance={distance}\nlast_reward={reward}\nswap={swap}\norientation{orientation}\ngoal_x,goal_y={goal_x} {goal_y}\nrotation={self.car.rotation}\nvelocity={self.car.velocity}\nangle={self.car.angle}")
         
         new_obs,orientation=self.get_state()
 
 
         # We check if the episode is done
         done_bool = 0 if episode_timesteps + 1 == max_episode_steps else float(done)
+        if episode_timesteps==max_episode_steps:
+            done=True
         # if total_timesteps%1000==0:
         #     done=True
         # We increase the total reward
@@ -519,7 +521,7 @@ class CarApp(App):
     def clear_canvas(self, obj):
         global sand
         self.painter.canvas.clear()
-        sand = np.zeros((longueur,largeur))
+        # sand = np.zeros((longueur,largeur))
 
     def save(self, obj):
         logger.info("saving brain...")
