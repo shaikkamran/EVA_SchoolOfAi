@@ -2,8 +2,8 @@
 
 import pickle
 import time
-from random import randint, random
-
+from random import randint, random,uniform
+from collections import namedtuple
 import cv2
 import imutils
 import matplotlib.pyplot as plt
@@ -15,8 +15,9 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.image import Image as CoreImage
-from kivy.graphics import Color, Ellipse, Line
-from kivy.graphics.texture import Texture
+from kivy.graphics import Color,  Line
+from car_crop_utils import get_car_paste_cordinates,get_half_cords,get_sand_crop_coordinates,car_on_corners
+
 from kivy.properties import (NumericProperty, ObjectProperty,
                              ReferenceListProperty)
 from kivy.uix.button import Button
@@ -28,18 +29,21 @@ from logger import get_logger
 
 logger = get_logger("./logs")
 logging.Logger.manager.root = logger
-from td3_small import TD3, ReplayBuffer
+
+from td3_small import TD3, ReplayBuffer,State
 
 action_dim=1
-orientation_dim=1
+orientation_dim=2
 out_channels=1
 critic_out_channels=1
-max_action=5
+max_action=2
 state_size=(3,50,50)
-image_crop_size=100
+image_crop_size=200
 policy = TD3(state_size,action_dim, max_action,orientation_dim,out_channels,critic_out_channels)
+# policy.load("car_t3d26107","pytorch_models")
 
 replay_buffer=ReplayBuffer()
+
 # Adding this line if we don't want the right click to put a red point
 Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
 Config.set('graphics', 'resizable', False)
@@ -53,15 +57,20 @@ n_points = 0
 length = 0
 
 # action2rotation = [-5.0,-4.0,-3.0,-2.0,-1.0,0.0,1.0,2.0,3.0,4.0,5.0]
-action2rotation=np.arange(-5,5,0.2,dtype=float)
+action2rotation=np.random.uniform(-max_action,max_action,100)
 reward = 0
 scores = []
 im = CoreImage("./images/MASK1.png")
+state=namedtuple('state',['image','orientation'])
+
+sand_img=PILImage.open("./images/mask.png")
+# with open("replay.pkl","rb") as file:
+#     replay_buffer.storage=pickle.load(file)
 
 # textureMask = CoreImage(source="./kivytest/simplemask1.png")
 counter=0
-car_img=cv2.imread("./images/triangle_L_resized.png")
-
+car=PILImage.open("./images/arrow_resized.png")
+sand_img=PILImage.open("./images/mask.png")
 # Initializing the map
 first_update = True
 
@@ -76,7 +85,7 @@ eval_freq = 5e3 # How often the evaluation step is performed (after how many tim
 max_timesteps = 5e5 # Total number of iterations/timesteps
 save_models = True # Boolean checker whether or not to save the pre-trained model
 expl_noise = 0.1 # Exploration noise - STD value of exploration Gaussian noise
-batch_size = 100 # Size of the batch
+batch_size = 300 # Size of the batch
 discount = 0.99 # Discount factor gamma, used in the calculation of the total discounted reward
 tau = 0.005 # Target network update rate
 policy_noise = 0.2 # STD of Gaussian noise added to the actions for the exploration purposes
@@ -90,8 +99,7 @@ episode_num = 0
 done = True
 t0 = time.time()
 episode_timesteps=0
-max_episode_steps=2000
-
+max_episode_steps=3000
 
 def init():
 
@@ -112,48 +120,6 @@ def init():
     first_update = False
     global swap
     swap = 0
-
-def add_padding(img,resize_shape):
-    height,width,_=img.shape
-    to_height,to_width=resize_shape
-    if width%2==1:
-        width_1,width_2=width-1,width
-        
-    else:
-        width_1,width_2=width,width
-
-    if height%2==1:
-        height_1,height_2=height-1,height
-            
-    else:
-        height_1,height_2=height,height
-    
-    # logger.info(width_1,width_2,height_1,height_2)
-
-    return cv2.copyMakeBorder(img,(to_height-height_1)//2,(to_height-height_2)//2,(to_width-width_1)//2,(to_width-width_2)//2,cv2.BORDER_CONSTANT, value=0)
-
-def get_crop_coordinates(x,y,no):
-    boundary_x,boundary_y=1429,660
-
-    x_coordinates=(x-no,x+no)
-    y_coordinates=(y-no,y+no)
-    
-    if x+no>boundary_x:
-        x_coordinates=(boundary_x - 2*no,boundary_x)
-    
-    if x-no<0:
-        x_coordinates=(0,2*no)
-
-    if y+no>boundary_y:
-        y_coordinates=(boundary_y - 2*no,boundary_y)
-
-    if y-no<0:
-        y_coordinates=(0,2*no)
-    
-
-    
-    return x_coordinates,y_coordinates    
-    
 
 
 # Initializing the last distance
@@ -192,8 +158,8 @@ class Car(Widget):
         # logger.info(f"got={sand_coordinates[0][no]}{sand_coordinates[1][no]}")
         self.x=int(sand_coordinates[0][no])
         self.y=int(sand_coordinates[1][no])
-        f=abs(self.angle)
-        self.angle=randint(0,int(f))
+        
+        self.angle=uniform(-360,360)
 
     def move(self, rotation):
 
@@ -243,37 +209,38 @@ class Game(Widget):
         yy = goal_y - self.car.y
 
         
-        orientation = Vector(*self.car.velocity).angle((xx,yy))
+        orientation = Vector(*self.car.velocity).angle((xx,yy))/180.0
         
-        return orientation
+        return [orientation,-orientation]
 
     def get_state(self,no=image_crop_size//2):
 
-        x_car=int(self.car.x)
-        y_car=int(self.car.y)
+        x,y=int(self.car.x),int(self.car.y)
 
+        car_rotated=car.rotate(self.car.angle,expand=True)
 
-        orientation=self.get_orientation()
+        print(f"car position={x} {y}")
         
-        # car_oriented=imutils.rotate_bound(car_img,-car_img_rot_angle)
-        car_oriented=imutils.rotate_bound(car_img,-self.car.angle)
-        
-        x_cordinates,y_cordinates=get_crop_coordinates(x_car,y_car,no)
+        car_final=car_rotated.crop(car_on_corners(car_rotated,y,x))
 
-        car_state=np.uint8(sand[x_cordinates[0]:x_cordinates[1],y_cordinates[0]:y_cordinates[1]]*255)
-        
-        car_oriented_padded=add_padding(car_oriented,(2*no,2*no))
-        car_state_in3d=cv2.applyColorMap(car_state, cv2.COLORMAP_BONE)
+        sand1=sand_img.copy()
 
-        obs=cv2.addWeighted(car_state_in3d,0.35,car_oriented_padded,0.55,0)
-        obs=cv2.resize(obs,(state_size[1],state_size[2]))
-        return obs.reshape(state_size)/255.0,orientation
+        sand1.paste(car_final,get_car_paste_cordinates(car_rotated,y,x),car_final)
 
+        sand_crop=sand1.crop(get_sand_crop_coordinates(y,x,no))
+
+        sand_crop=sand_crop.convert(mode="RGB")
+        s=np.array(sand_crop)/255.0
+        # cv2.imshow("img",s)
+        # cv2.waitKey(1)
+        # print(s.shape)
+        s=cv2.resize(s,(state_size[1],state_size[2]))
+        return state(s.reshape(state_size),self.get_orientation())
     
     def calculate_reward(self,last_distance,last_reward,swap,last_orientation):
         
         global goal_x,goal_y
-        boundary_no=30
+        boundary_no=5
         done=False
         distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
         self.ball1.pos = self.car.sensor1
@@ -284,22 +251,20 @@ class Game(Widget):
 
         
         distance = np.sqrt((self.car.x - goal_x)**2 + (self.car.y - goal_y)**2)
-        self.ball1.pos = self.car.sensor1
-        self.ball2.pos = self.car.sensor2
-        self.ball3.pos = self.car.sensor3
-
+        
+        # reward_copy=last_reward
         if sand[int(self.car.x),int(self.car.y)] > 0:
             self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
             print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
             print(f"orientation{orientation}")
-            last_reward = -1
+            last_reward = -0.5
         else: # otherwise
             self.car.velocity = Vector(2, 0).rotate(self.car.angle)
-            last_reward = -0.2
+            last_reward = 0.2
             print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
             print(f"orientation{orientation}")
-            if distance < last_distance:
-                last_reward = 0.1
+        if distance < last_distance:
+            last_reward += 0.8
 
         if self.car.x < boundary_no:
             self.car.x = boundary_no
@@ -329,6 +294,9 @@ class Game(Widget):
                 goal_y = 277
                 swap = 1
 
+        # if last_reward<=reward_copy and reward_copy<=-0.9:
+        #     last_reward=last_reward+reward_copy
+
         return distance,last_reward,swap,done
 
     def chose_random_action(self):
@@ -346,7 +314,7 @@ class Game(Widget):
         global longueur
         global largeur
         global swap,episode_reward
-        global counter,done,episode_timesteps,obs,orientation
+        global counter,done,episode_timesteps,current_state
         global total_timesteps,max_action,max_episode_steps,episode_num,timesteps_since_eval,policy_freq,policy_noise,tau,discount,replay_buffer
         
 
@@ -357,8 +325,8 @@ class Game(Widget):
         
         if counter==0:
             
-            obs,orientation=self.get_state()
-            plt.imsave("car_image.png",obs.reshape(50,50,3))
+            current_state=self.get_state()
+            plt.imsave("car_image.png",current_state.image.reshape(50,50,3))
             counter+=1
         
        
@@ -373,7 +341,7 @@ class Game(Widget):
                 # if total_timesteps>=10000:
                     logger.info("Total Timesteps: {} Episode Num: {} Reward: {}".format(total_timesteps, episode_num, episode_reward))
                     # policy.train(replay_buffer, episode_timesteps, batch_size, discount, tau, policy_noise, noise_clip, policy_freq)
-                    policy.train(replay_buffer,min(episode_timesteps,60), batch_size, discount, tau, policy_noise, noise_clip, policy_freq)
+                    policy.train(replay_buffer,min(episode_timesteps,100), batch_size, discount, tau, policy_noise, noise_clip, policy_freq)
 
                 # We evaluate the episode and we save the policy
                 if timesteps_since_eval >= eval_freq:
@@ -381,12 +349,16 @@ class Game(Widget):
                     timesteps_since_eval %= eval_freq
                     # evaluations.append(evaluate_policy(policy))
                     file_name="car_t3d"+str(total_timesteps)
+                    # replay_file="car_t3d_replay"+str(total_timesteps)+".pkl"
                     policy.save(file_name, directory="./pytorch_models")
-                    # np.save("./results/%s" % (file_name), evaluations)
+                    # with open(f"./replay_buffers/{replay_file}","wb") as file:
+                    #     logger.info("Saving the replay buffer")
+                    #     pickle.dump(replay_buffer.storage,file)
+                    # # np.save("./results/%s" % (file_name), evaluations)
                     
                 # When the training step is done, we reset the state of the environment
                 _=self.car.reset_env()
-                obs,orientation = self.get_state()
+                current_state= self.get_state()
                 
                 # Set the Done to False
                 done = False
@@ -406,8 +378,8 @@ class Game(Widget):
         else: # After 10000 timesteps, we switch to the model
             # action = policy.select_action(np.array(obs))
             logger.info("Action from agent")
-            o=np.array([orientation]).reshape(1,1)
-            action=policy.select_action(convert_to_tensor(obs),torch.tensor(o,dtype=torch.float).to(device))
+            o=np.array([current_state.orientation]).reshape(1,2)
+            action=policy.select_action(convert_to_tensor(current_state.image),torch.tensor(o,dtype=torch.float).to(device))
             # If the explore_noise parameter is not 0, we add noise to the action and we clip it
             if expl_noise != 0:
                 action = (action + np.random.normal(0, expl_noise, size=1)).clip(-max_action, max_action)
@@ -420,12 +392,12 @@ class Game(Widget):
         else:
             action=action[0]
             self.car.move(float(action))
-        distance,reward,swap,done=self.calculate_reward(last_distance,reward,swap,orientation)
+        distance,reward,swap,done=self.calculate_reward(last_distance,reward,swap,current_state.orientation)
         last_distance = distance
 
-        logger.info(f"Episode Timesteps={episode_timesteps}\nTotal Iterations={total_timesteps}\ndistance={distance}\nlast_reward={reward}\nswap={swap}\norientation{orientation}\ngoal_x,goal_y={goal_x} {goal_y}\nrotation={self.car.rotation}\nvelocity={self.car.velocity}\nangle={self.car.angle}")
+        logger.info(f"Episode Timesteps={episode_timesteps}\nTotal Iterations={total_timesteps}\ndistance={distance}\nlast_reward={reward}\nswap={swap}\norientation{current_state.orientation}\ngoal_x,goal_y={goal_x} {goal_y}\nrotation={self.car.rotation}\nvelocity={self.car.velocity}\nangle={self.car.angle}")
         
-        new_obs,orientation=self.get_state()
+        next_state=self.get_state()
 
 
         # We check if the episode is done
@@ -440,10 +412,10 @@ class Game(Widget):
         
         # We store the new transition into the Experience Replay memory (ReplayBuffer)
             
-        replay_buffer.add((obs,orientation,new_obs, action, reward, done_bool))
+        replay_buffer.add((current_state,next_state, action, reward, done_bool))
         
         # We update the state, the episode timestep, the total timesteps, and the timesteps since the evaluation of the policy
-        obs = new_obs
+        current_state = next_state
         episode_timesteps += 1
         total_timesteps += 1
         timesteps_since_eval += 1
@@ -537,3 +509,11 @@ class CarApp(App):
 if __name__ == '__main__':
 
     CarApp().run()
+
+
+def on_exit():
+    logger.info("Saving the replay buffer")
+    with open("replay.pkl","wb") as file:
+        pickle.dump(replay_buffer.storage,file)
+
+# on_exit()

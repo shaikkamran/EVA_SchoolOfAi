@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -41,6 +42,19 @@ class conv_block_without_relu(nn.Module):
         return self.convblock(x)
 
 
+class State():
+
+  def __init__(self):
+    
+    self.image_list=[]
+    self.orientation_list=[]
+
+  def add(self,state_tuple):
+    
+    self.image_list.append(state_tuple.image)
+    self.orientation_list.append(state_tuple.orientation)
+    
+
 class ReplayBuffer(object):
 
   def __init__(self, max_size=1e6):
@@ -56,17 +70,22 @@ class ReplayBuffer(object):
       self.storage.append(transition)
 
   def sample(self, batch_size):
+    
     ind = np.random.randint(0, len(self.storage), size=batch_size)
-    batch_states,batch_orientations, batch_next_states, batch_actions, batch_rewards, batch_dones = [], [], [], [], [],[]
+    batch_states,batch_next_states, batch_actions, batch_rewards, batch_dones = State(),State(), [], [], [] 
+    
     for i in ind: 
-      state,orientation ,next_state, action, reward, done = self.storage[i]
-      batch_states.append(np.array(state, copy=False))
-      batch_orientations.append([orientation])
-      batch_next_states.append(np.array(next_state, copy=False))
+
+      state,next_state, action, reward, done = self.storage[i]
+      
+      batch_states.add(state)
+      batch_next_states.add(next_state)
+      
       batch_actions.append(np.array(action, copy=False))
       batch_rewards.append(np.array(reward, copy=False))
       batch_dones.append(np.array(done, copy=False))
-    return np.array(batch_states),np.array(batch_orientations), np.array(batch_next_states), np.array(batch_actions), np.array(batch_rewards).reshape(-1, 1), np.array(batch_dones).reshape(-1, 1)
+
+    return batch_states,batch_next_states,np.array(batch_actions), np.array(batch_rewards).reshape(-1, 1), np.array(batch_dones).reshape(-1, 1)
     
 
 
@@ -114,7 +133,7 @@ class Actor(nn.Module):
         x=self.gap(x).view(-1,self.out_channels)
         
         logger.debug(f"The output of gap={x}")        
-        
+        # logger.debug(f"{x.shape} === {u.shape}")
         x=torch.cat([x,u],1)
 
         x=self.linear2(F.relu(self.bn1(self.linear1(x))))
@@ -123,7 +142,7 @@ class Actor(nn.Module):
         return self.max_action*torch.tanh(x)
     
 class Critic(nn.Module):
-    def __init__(self,image_size,action_dim,critic_out_channels):
+    def __init__(self,image_size,action_dim,orientation_dim,critic_out_channels):
         super(Critic, self).__init__()
         
      
@@ -131,7 +150,7 @@ class Critic(nn.Module):
         _,self.height,self.width=image_size
         self.action_dim=action_dim
         self.out_channels=critic_out_channels
-        
+        self.orientation_dim=orientation_dim
         self.set_dimensions((self.height//2,self.width//2))
         
         self.conv1=conv_block(in_channels=3,out_channels=10,padding=(self.p_h,self.p_w),stride=2)
@@ -146,7 +165,7 @@ class Critic(nn.Module):
         
         self.gap=nn.AvgPool2d(self.height)
         
-        self.linear1=nn.Linear(self.out_channels + action_dim+1, 10)
+        self.linear1=nn.Linear(self.out_channels + action_dim+orientation_dim, 10)
         
         self.bn1 = nn.BatchNorm1d(num_features=10)
         
@@ -170,7 +189,7 @@ class Critic(nn.Module):
         
         self.gap_2=nn.AvgPool2d(self.height)
         
-        self.linear1_2=nn.Linear(self.out_channels + action_dim+1, 10)
+        self.linear1_2=nn.Linear(self.out_channels + action_dim+orientation_dim, 10)
         
         self.bn1_2 = nn.BatchNorm1d(num_features=10)
 
@@ -186,7 +205,8 @@ class Critic(nn.Module):
         x1=self.conv3(self.conv2(self.conv1(x)))
         x1=self.gap(x1).view(-1,self.out_channels)
         x1=torch.cat([x1,orientation,action],1)
-        x1= self.bn2(self.linear2(F.relu(self.bn1(self.linear1(x1)))))
+        
+        x1= self.bn2(F.relu(self.linear2(self.bn1(self.linear1(x1)))))
         
         
         
@@ -194,7 +214,7 @@ class Critic(nn.Module):
         x2=self.gap_2(x2)
         x2=x2.view(-1,self.out_channels)
         x2=torch.cat([x2,orientation,action],1)
-        x2= self.bn2_2(self.linear2_2(F.relu(self.bn1_2(self.linear1_2(x2)))))
+        x2= self.bn2_2(F.relu(self.linear2_2(self.bn1_2(self.linear1_2(x2)))))
         
         return x1,x2
         
@@ -202,7 +222,7 @@ class Critic(nn.Module):
         x1=self.conv3(self.conv2(self.conv1(x)))
         x1=self.gap(x1).view(-1,self.out_channels)
         x1=torch.cat([x1,orientation,action],1)
-        x1= self.linear2(F.relu(self.bn1(self.linear1(x1))))
+        x1= self.bn2(F.relu(self.linear2(self.bn1(self.linear1(x1)))))
         
         return x1   
 
@@ -215,36 +235,42 @@ class TD3(object):
     self.actor_target = Actor(image_size,max_action,orientation_dim,out_channels).to(device)
     self.actor_target.load_state_dict(self.actor.state_dict())
     self.actor_optimizer = torch.optim.Adam(self.actor.parameters())
-    self.critic = Critic(image_size,action_dim,critic_out_channels).to(device)
-    self.critic_target = Critic(image_size,action_dim,critic_out_channels).to(device)
+    self.critic = Critic(image_size,action_dim,orientation_dim,critic_out_channels).to(device)
+    self.critic_target = Critic(image_size,action_dim,orientation_dim,critic_out_channels).to(device)
     self.critic_target.load_state_dict(self.critic.state_dict())
     self.critic_optimizer = torch.optim.Adam(self.critic.parameters())
     self.max_action = max_action
 
-  def select_action(self, state,orientation):
+  def select_action(self, image,orientation):
     # state = torch.Tensor(state.reshape(1, -1)).to(device)
     self.actor.eval()
-    return self.actor(state,orientation).cpu().data.numpy().flatten()
+    return self.actor(image,orientation).cpu().data.numpy().flatten()
 
   def train(self, replay_buffer, iterations, batch_size=100, discount=0.99, tau=0.005, policy_noise=0.2, noise_clip=0.5, policy_freq=2):
     
     for it in range(iterations):
       
       # Step 4: We sample a batch of transitions (s, s’, a, r) from the memory
-      batch_states,batch_orientation,batch_next_states, batch_actions, batch_rewards, batch_dones = replay_buffer.sample(batch_size)
+      batch_states,batch_next_states, batch_actions, batch_rewards, batch_dones = replay_buffer.sample(batch_size)
+      
       if len(batch_actions.shape)!=2:
         batch_actions=batch_actions.reshape(batch_size,1)
 
-      state = torch.tensor(batch_states,dtype=torch.float).to(device)
-      orientation=torch.tensor(batch_orientation,dtype=torch.float).to(device)
-      next_state = torch.tensor(batch_next_states,dtype=torch.float).to(device)
+      
+      state_image = torch.tensor(np.array(batch_states.image_list),dtype=torch.float).to(device)
+      state_orientation=torch.tensor(np.array(batch_states.orientation_list),dtype=torch.float).to(device)
+
+      next_state_image = torch.tensor(np.array(batch_next_states.image_list),dtype=torch.float).to(device)
+      next_state_orientation=torch.tensor(np.array(batch_next_states.orientation_list),dtype=torch.float).to(device)
+      
+      
       action = torch.tensor(batch_actions,dtype=torch.float).to(device)
       reward = torch.tensor(batch_rewards,dtype=torch.float).to(device)
       done = torch.tensor(batch_dones,dtype=torch.float).to(device)
       
       # print(state.shape,next_state.shape,action.shape)
       # Step 5: From the next state s’, the Actor target plays the next action a’
-      next_action = self.actor_target(next_state,orientation)
+      next_action = self.actor_target(next_state_image,next_state_orientation)
       
       # Step 6: We add Gaussian noise to this next action a’ and we clamp it in a range of values supported by the environment
       noise = torch.Tensor(batch_actions).data.normal_(0, policy_noise).to(device)
@@ -252,8 +278,8 @@ class TD3(object):
       next_action = (next_action + noise).clamp(-self.max_action, self.max_action)
       
       # Step 7: The two Critic targets take each the couple (s’, a’) as input and return two Q-values Qt1(s’,a’) and Qt2(s’,a’) as outputs
-      target_Q1, target_Q2 = self.critic_target(next_state, orientation,next_action)
-      logger.debug(f"Outputs of critic={target_Q1}  {target_Q2}")
+      target_Q1, target_Q2 = self.critic_target(next_state_image, next_state_orientation,next_action)
+      # logger.debug(f"Outputs of critic={target_Q1}  {target_Q2}")
       # Step 8: We keep the minimum of these two Q-values: min(Qt1, Qt2)
       target_Q = torch.min(target_Q1, target_Q2)
       
@@ -261,11 +287,11 @@ class TD3(object):
       target_Q = reward + ((1 - done) * discount * target_Q).detach()
       
       # Step 10: The two Critic models take each the couple (s, a) as input and return two Q-values Q1(s,a) and Q2(s,a) as outputs
-      current_Q1, current_Q2 = self.critic(state, orientation,action)
+      current_Q1, current_Q2 = self.critic(state_image, state_orientation,action)
       
       # Step 11: We compute the loss coming from the two Critic models: Critic Loss = MSE_Loss(Q1(s,a), Qt) + MSE_Loss(Q2(s,a), Qt)
       critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(current_Q2, target_Q)
-      
+      logger.debug(f"critic loss is {critic_loss}")
       # Step 12: We backpropagate this Critic loss and update the parameters of the two Critic models with a SGD optimizer
       self.critic_optimizer.zero_grad()
       critic_loss.backward()
@@ -273,11 +299,11 @@ class TD3(object):
       
       # Step 13: Once every two iterations, we update our Actor model by performing gradient ascent on the output of the first Critic model
       if it % policy_freq == 0:
-        actor_loss = -self.critic.Q1(state, orientation,self.actor(state,orientation)).mean()
+        actor_loss = -self.critic.Q1(state_image, state_orientation,self.actor(state_image,state_orientation)).mean()
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
         self.actor_optimizer.step()
-        
+        logger.debug(f"Actor loss is {actor_loss}")
         # Step 14: Still once every two iterations, we update the weights of the Actor target by polyak averaging
         for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
           target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
