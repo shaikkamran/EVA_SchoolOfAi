@@ -39,11 +39,13 @@ def car_on_corners(im,x,y):
     if h2+y>boundaries[1]:
         
         h2_diff=h2+y-boundaries[1]
-        top=h2_diff
+        # top=h2_diff
+        bottom=height-h2_diff
     
     if y-h1<0:
         h1_diff=abs(y-h1)
-        bottom=height-h1_diff
+        # bottom=height-h1_diff
+        top=h1_diff
         
     return left,top,right,bottom
 

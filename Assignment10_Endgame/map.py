@@ -33,9 +33,9 @@ logging.Logger.manager.root = logger
 from td3_small import TD3, ReplayBuffer,State
 
 action_dim=1
-orientation_dim=2
-out_channels=1
-critic_out_channels=1
+orientation_dim=1
+out_channels=10
+critic_out_channels=10
 max_action=2
 state_size=(3,50,50)
 image_crop_size=200
@@ -56,7 +56,7 @@ last_y = 0
 n_points = 0
 length = 0
 
-# action2rotation = [-5.0,-4.0,-3.0,-2.0,-1.0,0.0,1.0,2.0,3.0,4.0,5.0]
+
 action2rotation=np.random.uniform(-max_action,max_action,100)
 reward = 0
 scores = []
@@ -70,7 +70,7 @@ sand_img=PILImage.open("./images/mask.png")
 # textureMask = CoreImage(source="./kivytest/simplemask1.png")
 counter=0
 car=PILImage.open("./images/arrow_resized.png")
-sand_img=PILImage.open("./images/mask.png")
+sand_img=PILImage.open("./images/mask_with_border.jpg")
 # Initializing the map
 first_update = True
 
@@ -85,7 +85,7 @@ eval_freq = 5e3 # How often the evaluation step is performed (after how many tim
 max_timesteps = 5e5 # Total number of iterations/timesteps
 save_models = True # Boolean checker whether or not to save the pre-trained model
 expl_noise = 0.1 # Exploration noise - STD value of exploration Gaussian noise
-batch_size = 300 # Size of the batch
+batch_size = 100 # Size of the batch
 discount = 0.99 # Discount factor gamma, used in the calculation of the total discounted reward
 tau = 0.005 # Target network update rate
 policy_noise = 0.2 # STD of Gaussian noise added to the actions for the exploration purposes
@@ -209,9 +209,10 @@ class Game(Widget):
         yy = goal_y - self.car.y
 
         
-        orientation = Vector(*self.car.velocity).angle((xx,yy))/180.0
+        orientation = Vector(*self.car.velocity).angle((xx,yy))
         
-        return [orientation,-orientation]
+        # return [orientation,-orientation]
+        return [orientation]
 
     def get_state(self,no=image_crop_size//2):
 
@@ -219,7 +220,7 @@ class Game(Widget):
 
         car_rotated=car.rotate(self.car.angle,expand=True)
 
-        print(f"car position={x} {y}")
+        logger.info(f"car position={x} {y}")
         
         car_final=car_rotated.crop(car_on_corners(car_rotated,y,x))
 
@@ -257,14 +258,18 @@ class Game(Widget):
             self.car.velocity = Vector(0.5, 0).rotate(self.car.angle)
             print(1, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
             print(f"orientation{orientation}")
-            last_reward = -0.5
+            last_reward = -0.6
         else: # otherwise
             self.car.velocity = Vector(2, 0).rotate(self.car.angle)
-            last_reward = 0.2
+            last_reward = 0.1
             print(0, goal_x, goal_y, distance, int(self.car.x),int(self.car.y), im.read_pixel(int(self.car.x),int(self.car.y)))
             print(f"orientation{orientation}")
+
         if distance < last_distance:
-            last_reward += 0.8
+            last_reward += 0.5
+        
+        else:
+            last_reward = last_reward +(-0.2)
 
         if self.car.x < boundary_no:
             self.car.x = boundary_no
@@ -378,7 +383,7 @@ class Game(Widget):
         else: # After 10000 timesteps, we switch to the model
             # action = policy.select_action(np.array(obs))
             logger.info("Action from agent")
-            o=np.array([current_state.orientation]).reshape(1,2)
+            o=np.array([current_state.orientation]).reshape(1,len(current_state.orientation))
             action=policy.select_action(convert_to_tensor(current_state.image),torch.tensor(o,dtype=torch.float).to(device))
             # If the explore_noise parameter is not 0, we add noise to the action and we clip it
             if expl_noise != 0:

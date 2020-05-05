@@ -95,45 +95,49 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
         
         
-        _,self.height,self.width=image_size
+        _,self.h,self.w=image_size
         self.max_action=max_action
         self.out_channels=out_channels
         self.orientation_dim=orientation_dim
         
-        self.set_dimensions((self.height//2,self.width//2))
-        
-        self.conv1=conv_block(in_channels=3,out_channels=10,padding=(self.p_h,self.p_w),stride=2)
-        
-        self.set_dimensions((self.height//2,self.width//2))
-        
-        self.conv2 = conv_block(in_channels=10,out_channels=24,padding=(self.p_h,self.p_w),stride=2)
-        
-        self.set_dimensions((self.height,self.width))
-        
-        self.conv3=conv_block_without_relu(in_channels=24,out_channels=out_channels,padding=(self.p_h,self.p_w))
+        self.conv1=conv_block(in_channels=3,out_channels=10,padding=(1,1),stride=1)
+        self.pool1 = nn.MaxPool2d(2, 2)
+
+        self.conv2=conv_block(in_channels=10,out_channels=16,padding=(1,1),stride=1)
+        self.pool2 = nn.MaxPool2d(2, 2) 
         
         
-        self.gap=nn.AvgPool2d(self.height)
+        self.conv3=conv_block(in_channels=16,out_channels=10,padding=0,kernel_size=(1,1))
+        self.conv4=conv_block(in_channels=10,out_channels=16,padding=(1,1),stride=1)
+        self.pool3 = nn.MaxPool2d(2, 2)
+        
+        
+        self.h,self.w=self.h//8,self.w//8
+
+        self.conv5=conv_block(in_channels=16,out_channels=self.out_channels,dropout=0.0,kernel_size=self.h)
+
         self.linear1=nn.Linear(self.orientation_dim+self.out_channels,10)
+
         self.bn1 = nn.BatchNorm1d(num_features=10)
         
         self.linear2=nn.Linear(10,1)
         self.bn2 = nn.BatchNorm1d(num_features=1)
         
-        
-    def set_dimensions(self,output_dim):
-        self.p_w,self.p_h=(1,1)
-        self.height,self.width=output_dim
-        
+    
         
     def forward(self, x,u):
 
-        x=self.conv3(self.conv2(self.conv1(x)))
+        x=self.pool1(self.conv1(x))
+        x=self.pool2(self.conv2(x))
+        x=self.conv3(x)
+        x= self.pool3(self.conv4(x))
         
-        x=self.gap(x).view(-1,self.out_channels)
+        x=self.conv5(x)
         
-        logger.debug(f"The output of gap={x}")        
-        # logger.debug(f"{x.shape} === {u.shape}")
+        logger.debug(f"The output of conv5={x}")        
+        logger.debug(f"{x.shape}  {u.shape}")
+        # x=x.view(-1,1)
+        x=x.reshape(x.shape[0],self.out_channels)
         x=torch.cat([x,u],1)
 
         x=self.linear2(F.relu(self.bn1(self.linear1(x))))
@@ -147,24 +151,27 @@ class Critic(nn.Module):
         
      
         
-        _,self.height,self.width=image_size
+        _,self.h,self.w=image_size
         self.action_dim=action_dim
         self.out_channels=critic_out_channels
         self.orientation_dim=orientation_dim
-        self.set_dimensions((self.height//2,self.width//2))
+
+        self.conv1=conv_block(in_channels=3,out_channels=10,padding=(1,1),stride=1)
+        self.pool1 = nn.MaxPool2d(2, 2)
+
+        self.conv2=conv_block(in_channels=10,out_channels=16,padding=(1,1),stride=1)
+        self.pool2 = nn.MaxPool2d(2, 2) 
         
-        self.conv1=conv_block(in_channels=3,out_channels=10,padding=(self.p_h,self.p_w),stride=2)
         
-        self.set_dimensions((self.height//2,self.width//2))
+        self.conv3=conv_block(in_channels=16,out_channels=10,padding=0,kernel_size=(1,1))
+        self.conv4=conv_block(in_channels=10,out_channels=16,padding=(1,1),stride=1)
+        self.pool3 = nn.MaxPool2d(2, 2)
         
-        self.conv2=conv_block(in_channels=10,out_channels=24,padding=(self.p_h,self.p_w),stride=2)
         
-        self.set_dimensions((self.height,self.width))
-        
-        self.conv3=conv_block_without_relu(in_channels=24,out_channels=self.out_channels,dropout=0.0,padding=(self.p_h,self.p_w))
-        
-        self.gap=nn.AvgPool2d(self.height)
-        
+        self.h,self.w=self.h//8,self.w//8
+
+        self.conv5=conv_block(in_channels=16,out_channels=self.out_channels,dropout=0.0,kernel_size=self.h)
+
         self.linear1=nn.Linear(self.out_channels + action_dim+orientation_dim, 10)
         
         self.bn1 = nn.BatchNorm1d(num_features=10)
@@ -173,56 +180,66 @@ class Critic(nn.Module):
         self.bn2 = nn.BatchNorm1d(num_features=1)
         
         
-        
-        _,self.height,self.width=image_size
-        self.action_dim=action_dim
-        
-        self.set_dimensions((self.height//2,self.width//2))
-        
-        self.conv1_2=conv_block(in_channels=3,out_channels=10,padding=(self.p_h,self.p_w),stride=2)
-        
-        self.set_dimensions((self.height//2,self.width//2))
-        
-        self.conv2_2=conv_block(in_channels=10,out_channels=24,padding=(self.p_h,self.p_w),stride=2)
-        
-        self.conv3_2=conv_block_without_relu(in_channels=24,out_channels=self.out_channels,dropout=0.0,padding=(self.p_h,self.p_w))
-        
-        self.gap_2=nn.AvgPool2d(self.height)
-        
+        self.conv1_2=conv_block(in_channels=3,out_channels=10,padding=(1,1),stride=1)
+        self.pool1_2 = nn.MaxPool2d(2, 2)
+
+        self.conv2_2=conv_block(in_channels=10,out_channels=16,padding=(1,1),stride=1)
+        self.pool2_2 = nn.MaxPool2d(2, 2) 
+
+        self.conv3_2=conv_block(in_channels=16,out_channels=10,padding=0,kernel_size=(1,1))
+        self.conv4_2=conv_block(in_channels=10,out_channels=16,padding=(1,1),stride=1)
+        self.pool3_2 = nn.MaxPool2d(2, 2)
+
+        self.conv5_2=conv_block(in_channels=16,out_channels=self.out_channels,dropout=0.0,kernel_size=self.h)
+
         self.linear1_2=nn.Linear(self.out_channels + action_dim+orientation_dim, 10)
         
         self.bn1_2 = nn.BatchNorm1d(num_features=10)
 
         self.linear2_2=nn.Linear(10,1)
         self.bn2_2 = nn.BatchNorm1d(num_features=1)
-        
-    def set_dimensions(self,output_dim):
-        self.p_w,self.p_h=(1,1)
-        self.height,self.width=output_dim
+    
     
     def forward(self, x,orientation,action):
         
-        x1=self.conv3(self.conv2(self.conv1(x)))
-        x1=self.gap(x1).view(-1,self.out_channels)
+        x1=self.pool1(self.conv1(x))
+        x1=self.pool2(self.conv2(x1))
+        x1=self.conv3(x1)
+        x1= self.pool3(self.conv4(x1))
+        
+        x1=self.conv5(x1)
+        # x1=x1.view(-1,1)
+        x1=x1.reshape(x1.shape[0],self.out_channels)
         x1=torch.cat([x1,orientation,action],1)
         
-        x1= self.bn2(F.relu(self.linear2(self.bn1(self.linear1(x1)))))
+        x1= self.bn2(self.linear2(F.relu(self.bn1(self.linear1(x1)))))
         
         
         
-        x2=self.conv3_2(self.conv2_2(self.conv1_2(x)))
-        x2=self.gap_2(x2)
-        x2=x2.view(-1,self.out_channels)
+        x2=self.pool1_2(self.conv1_2(x))
+        x2=self.pool2_2(self.conv2_2(x2))
+        x2=self.conv3_2(x2)
+        x2= self.pool3_2(self.conv4_2(x2))
+        x2=self.conv5_2(x2)
+        # x2=x2.view(-1,1)
+        x2=x2.reshape(x2.shape[0],self.out_channels)
         x2=torch.cat([x2,orientation,action],1)
-        x2= self.bn2_2(F.relu(self.linear2_2(self.bn1_2(self.linear1_2(x2)))))
+        x2= self.bn2_2(self.linear2_2(F.relu(self.bn1_2(self.linear1_2(x2)))))
         
         return x1,x2
         
     def Q1(self,x,orientation,action):
-        x1=self.conv3(self.conv2(self.conv1(x)))
-        x1=self.gap(x1).view(-1,self.out_channels)
+        x1=self.pool1(self.conv1(x))
+        x1=self.pool2(self.conv2(x1))
+        x1=self.conv3(x1)
+        x1= self.pool3(self.conv4(x1))
+        
+        x1=self.conv5(x1)
+        # x1=x1.view(-1,1)
+        x1=x1.reshape(x1.shape[0],self.out_channels)
         x1=torch.cat([x1,orientation,action],1)
-        x1= self.bn2(F.relu(self.linear2(self.bn1(self.linear1(x1)))))
+        
+        x1= self.bn2(self.linear2(F.relu(self.bn1(self.linear1(x1)))))
         
         return x1   
 
