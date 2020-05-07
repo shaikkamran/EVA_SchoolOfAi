@@ -30,6 +30,8 @@ I have done this Project in mainly four steps.
 
     * Make the car move on roads to reach the goal whereever it is getting distracted.
     * This can be done just by tweaking the Reward function.Reward function must be continuous for the gradient optimization.
+    * Something like (1-distance)^(constant) where the constant is 0<constant<=1
+    * Also for maintaining the car on sand the car (1-crop density)* can be multiplied with the above result. 
 
 12. All the training can be done be running ```python map.py```
 13. t3d_small.py is the main file where all the t3d code is written.
