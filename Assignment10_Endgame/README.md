@@ -9,7 +9,7 @@ I have done this Project in mainly four steps.
     * Like changing the car's position when called reset_function
     * Getting the cropped image of the mask.png with car in place .All of the code for this is there in car_crop_utils.py
      
-    * Then wrote functions like calculate orientation of the car wrt to the goal.For this I realized that reward function is the one where my model is lacking.Reward function must be continuous for the gradient optimization.I could have solved it perfectly by making the car just to move on road by only tweaking the reward function.
+    * Then wrote functions like calculate orientation of the car wrt to the goal.
 
 3. Had change the TD3 actor and critic models to a CNN model which i have made for a varible image input size.Cnn model is the a small network which could give 99.2 percent acc on mnist in 12 epochs..
 
@@ -28,10 +28,11 @@ I have done this Project in mainly four steps.
 <br>
 11. Improvements to be done are :-
     * Make the car move on roads to reach the goal whereever it is getting distracted.
+    * This can be done just by tweaking the Reward function.Reward function must be continuous for the gradient optimization.I could have solved it perfectly by making the car just to move on road by only tweaking the reward function.
 
-12. All the training can be done be running python map.py
-13. t3d_small is the main file where all the t3d code is written
-14. inferencing can be simply done by doing python infer.py
+12. All the training can be done be running ```python map.py```
+13. t3d_small.py is the main file where all the t3d code is written.
+14. inferencing can be simply done by doing ```python infer.py```
 
 Requirements python 3.7 with pytorch ,kivy,cv2,numpy,matplotlib  .
 
