@@ -40,7 +40,7 @@ max_action=2
 state_size=(3,50,50)
 image_crop_size=200
 policy = TD3(state_size,action_dim, max_action,orientation_dim,out_channels,critic_out_channels)
-# policy.load("car_t3d26107","pytorch_models")
+policy.load("car_t3d247037","models_5_5_2020")
 
 replay_buffer=ReplayBuffer()
 
@@ -204,6 +204,7 @@ class Game(Widget):
 
     def get_orientation(self):
 
+        global goal_x,goal_y
 
         xx = goal_x - self.car.x
         yy = goal_y - self.car.y
@@ -232,9 +233,9 @@ class Game(Widget):
 
         sand_crop=sand_crop.convert(mode="RGB")
         s=np.array(sand_crop)/255.0
-        # cv2.imshow("img",s)
-        # cv2.waitKey(1)
-        # print(s.shape)
+        cv2.imshow("img",s)
+        cv2.waitKey(1)
+        
         s=cv2.resize(s,(state_size[1],state_size[2]))
         return state(s.reshape(state_size),self.get_orientation())
     
@@ -322,110 +323,41 @@ class Game(Widget):
         global counter,done,episode_timesteps,current_state
         global total_timesteps,max_action,max_episode_steps,episode_num,timesteps_since_eval,policy_freq,policy_noise,tau,discount,replay_buffer
         
-
         longueur = self.width
         largeur = self.height
         if first_update:
             init()
         
-        if counter==0:
-            
-            current_state=self.get_state()
-            plt.imsave("car_image.png",current_state.image.reshape(50,50,3))
-            counter+=1
-        
-       
-# We start the main loop over 500,000 timesteps
-        if total_timesteps < max_timesteps:
-        
-        # If the episode is done
-            if done :
+        current_state = self.get_state()
 
-                # If we are not at the very beginning, we start the training process of the model
-                if total_timesteps != 0:
-                # if total_timesteps>=10000:
-                    logger.info("Total Timesteps: {} Episode Num: {} Reward: {}".format(total_timesteps, episode_num, episode_reward))
-                    # policy.train(replay_buffer, episode_timesteps, batch_size, discount, tau, policy_noise, noise_clip, policy_freq)
-                    policy.train(replay_buffer,min(episode_timesteps,100), batch_size, discount, tau, policy_noise, noise_clip, policy_freq)
+        if done:
 
-                # We evaluate the episode and we save the policy
-                if timesteps_since_eval >= eval_freq:
-                    logger.info("Saving the model")
-                    timesteps_since_eval %= eval_freq
-                    # evaluations.append(evaluate_policy(policy))
-                    file_name="car_t3d"+str(total_timesteps)
-                    # replay_file="car_t3d_replay"+str(total_timesteps)+".pkl"
-                    policy.save(file_name, directory="./pytorch_models")
-                    # with open(f"./replay_buffers/{replay_file}","wb") as file:
-                    #     logger.info("Saving the replay buffer")
-                    #     pickle.dump(replay_buffer.storage,file)
-                    # # np.save("./results/%s" % (file_name), evaluations)
-                    
-                # When the training step is done, we reset the state of the environment
-                _=self.car.reset_env()
-                current_state= self.get_state()
-                
-                # Set the Done to False
-                done = False
-                
-                # Set rewards and episode timesteps to zero
-                episode_reward = 0
-                episode_timesteps = 0
-                episode_num += 1
-            
-        # Before 10000 timesteps, we play random actions
-        if total_timesteps < start_timesteps:
-            # action = env.action_space.sample()
-            # action=action2rotation[randint(0,2)]
-            logger.info("Random Action from environment")
-            action=self.chose_random_action()
-        
-        else: # After 10000 timesteps, we switch to the model
-            # action = policy.select_action(np.array(obs))
-            logger.info("Action from agent")
-            o=np.array([current_state.orientation]).reshape(1,len(current_state.orientation))
-            action=policy.select_action(convert_to_tensor(current_state.image),torch.tensor(o,dtype=torch.float).to(device))
-            # If the explore_noise parameter is not 0, we add noise to the action and we clip it
-            if expl_noise != 0:
-                action = (action + np.random.normal(0, expl_noise, size=1)).clip(-max_action, max_action)
-        
-        # The agent performs the action in the environment, then reaches the next state and receives the reward
-        # new_obs, reward, done, _ = env.step(action)
-        if isinstance(action,np.float64):
+            _ = self.car.reset_env()
+            current_state = self.get_state()
+
+            done = False
+
+            action = self.chose_random_action()
+
+        print("Action from agent")
+        o = np.array([current_state.orientation]).reshape(1, len(current_state.orientation))
+        action = policy.select_action(
+            convert_to_tensor(current_state.image), torch.tensor(o, dtype=torch.float).to(device)
+        )
+
+        if isinstance(action, np.float64):
 
             self.car.move(float(action))
         else:
-            action=action[0]
+            action = action[0]
             self.car.move(float(action))
-        distance,reward,swap,done=self.calculate_reward(last_distance,reward,swap,current_state.orientation)
+        distance, reward, swap, done = self.calculate_reward(
+            last_distance, reward, swap, current_state.orientation
+        )
+
         last_distance = distance
 
-        logger.info(f"Episode Timesteps={episode_timesteps}\nTotal Iterations={total_timesteps}\ndistance={distance}\nlast_reward={reward}\nswap={swap}\norientation{current_state.orientation}\ngoal_x,goal_y={goal_x} {goal_y}\nrotation={self.car.rotation}\nvelocity={self.car.velocity}\nangle={self.car.angle}")
         
-        next_state=self.get_state()
-
-
-        # We check if the episode is done
-        done_bool = 0 if episode_timesteps + 1 == max_episode_steps else float(done)
-        if episode_timesteps==max_episode_steps:
-            done=True
-        # if total_timesteps%1000==0:
-        #     done=True
-        # We increase the total reward
-        episode_reward += reward
-        
-        
-        # We store the new transition into the Experience Replay memory (ReplayBuffer)
-            
-        replay_buffer.add((current_state,next_state, action, reward, done_bool))
-        
-        # We update the state, the episode timestep, the total timesteps, and the timesteps since the evaluation of the policy
-        current_state = next_state
-        episode_timesteps += 1
-        total_timesteps += 1
-        timesteps_since_eval += 1
-
-
 
 
 
@@ -438,43 +370,6 @@ class Game(Widget):
 
 
 
-
-class MyPaintWidget(Widget):
-
-    def on_touch_down(self, touch):
-        global length, n_points, last_x, last_y
-        with self.canvas:
-            Color(0.8,0.7,0)
-            d = 10.
-            touch.ud['line'] = Line(points = (touch.x, touch.y), width = 10)
-            last_x = int(touch.x)
-            last_y = int(touch.y)
-            n_points = 0
-            length = 0
-            sand[int(touch.x),int(touch.y)] = 1
-            img = PILImage.fromarray(sand.astype("uint8")*255)
-            img.save("./images/sand.jpg")
-
-    
-    
-    def on_touch_move(self, touch):
-        global length, n_points, last_x, last_y
-        if touch.button == 'left':
-            touch.ud['line'].points += [touch.x, touch.y]
-            x = int(touch.x)
-            y = int(touch.y)
-            length += np.sqrt(max((x - last_x)**2 + (y - last_y)**2, 2))
-            n_points += 1.
-            density = n_points/(length)
-            touch.ud['line'].width = int(20 * density + 1)
-            sand[int(touch.x) - 10 : int(touch.x) + 10, int(touch.y) - 10 : int(touch.y) + 10] = 1
-
-            
-            last_x = x
-            last_y = y
-
-# Adding the API Buttons (clear, save and load)
-
 class CarApp(App):
 
     def build(self):
@@ -482,43 +377,12 @@ class CarApp(App):
         parent.serve_car()
         
         Clock.schedule_interval(parent.update, 1.0/60.0)
-        self.painter = MyPaintWidget()
-        clearbtn = Button(text = 'clear')
-        savebtn = Button(text = 'save', pos = (parent.width, 0))
-        loadbtn = Button(text = 'load', pos = (2 * parent.width, 0))
-        clearbtn.bind(on_release = self.clear_canvas)
-        savebtn.bind(on_release = self.save)
-        loadbtn.bind(on_release = self.load)
-        parent.add_widget(self.painter)
-        parent.add_widget(clearbtn)
-        parent.add_widget(savebtn)
-        parent.add_widget(loadbtn)
+        
         return parent
 
-    def clear_canvas(self, obj):
-        global sand
-        self.painter.canvas.clear()
-        # sand = np.zeros((longueur,largeur))
-
-    def save(self, obj):
-        logger.info("saving brain...")
-        plt.plot(scores)
-        plt.show()
-
-    def load(self, obj):
-        logger.info("loading last saved brain...")
+    
         
-
-# Running the whole thing
 
 if __name__ == '__main__':
 
     CarApp().run()
-
-
-def on_exit():
-    logger.info("Saving the replay buffer")
-    with open("replay.pkl","wb") as file:
-        pickle.dump(replay_buffer.storage,file)
-
-# on_exit()
