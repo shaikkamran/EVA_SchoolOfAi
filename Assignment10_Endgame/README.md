@@ -27,8 +27,9 @@ I have done this Project in mainly four steps.
 [a link]https://www.youtube.com/watch?v=IEt5RREDBnc
 <br>
 11. Improvements to be done are :-
+
     * Make the car move on roads to reach the goal whereever it is getting distracted.
-    * This can be done just by tweaking the Reward function.Reward function must be continuous for the gradient optimization.I could have solved it perfectly by making the car just to move on road by only tweaking the reward function.
+    * This can be done just by tweaking the Reward function.Reward function must be continuous for the gradient optimization.
 
 12. All the training can be done be running ```python map.py```
 13. t3d_small.py is the main file where all the t3d code is written.
