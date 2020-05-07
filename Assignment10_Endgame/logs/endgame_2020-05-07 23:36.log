@@ -1,0 +1,77 @@
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - [ImageSDL2   ] Load </home/kamran/EVA_SchoolOfAi/Assignment10_Endgame/images/MASK1.png>[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'IHDR' 16 13[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'gAMA' 41 4[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'cHRM' 57 32[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'iCCP' 101 2617[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - iCCP profile name b'Photoshop ICC profile'[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - Compression method 0[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'pHYs' 2730 9[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'IDAT' 2751 62785[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'IHDR' 16 13[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'zTXt' 41 135[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'iTXt' 188 2562[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'sBIT' 2762 4[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - b'sBIT' 2762 4 (unknown)[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:52 - [1;36mDEBUG[0m - STREAM b'IDAT' 2778 1122[0m
+[32m app.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [App         ] Loading kv <./car.kv>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [Window      ] Ignored <egl_rpi> (import error)[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [Window      ] Provider: sdl2(['window_egl_rpi'] ignored)[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] Using the "OpenGL" graphics system[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] Backend used <sdl2>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] OpenGL version <b'4.6.0 NVIDIA 435.21'>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] OpenGL vendor <b'NVIDIA Corporation'>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] OpenGL renderer <b'GeForce GTX 1060/PCIe/SSE2'>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] OpenGL parsed version: 4, 6[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] Shading version <b'4.60 NVIDIA'>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] Texture max size <32768>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] Texture max units <32>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [Shader      ] Fragment compiled successfully[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [Shader      ] Vertex compiled successfully[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [ImageSDL2   ] Load </home/kamran/anaconda3/envs/pytorch_env/lib/python3.7/site-packages/kivy/data/glsl/default.png>[0m
+[32m window_sdl2.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [Window      ] auto add sdl2 input provider[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [Window      ] virtual keyboard not allowed, single mode, not docked[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [ImageSDL2   ] Load </home/kamran/EVA_SchoolOfAi/Assignment10_Endgame/images/citymap_with_goals.png>[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [GL          ] NPOT texture support is available[0m
+[32m __init__.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [ImageSDL2   ] Load </home/kamran/EVA_SchoolOfAi/Assignment10_Endgame/images/car.png>[0m
+[32m base.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [Base        ] Create provider from mouse,multitouch_on_demand[0m
+[32m base.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [Base        ] Create provider from probesysfs[0m
+[32m probesysfs.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [ProbeSysfs  ] using probesysfs![0m
+[32m probesysfs.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - [ProbeSysfs  ] found device: SynPS/2 Synaptics TouchPad at /dev/input/event5[0m
+[32m probesysfs.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [ProbeSysfs  ] device match: /dev/input/event5[0m
+[32m mtdev.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [MTD         ] Read event from </dev/input/event5>[0m
+[32m base.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [Base        ] Start application main loop[0m
+[32m mtdev.py - 28505 - [32m2020-05-07 23:36:53 - [1;33mWARNING[0m - [MTD         ] Unable to open device "/dev/input/event5". Please ensure you have the appropriate permissions.[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - STREAM b'IHDR' 16 13[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - STREAM b'gAMA' 41 4[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - STREAM b'cHRM' 57 32[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - STREAM b'iCCP' 101 2617[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - iCCP profile name b'Photoshop ICC profile'[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - Compression method 0[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - STREAM b'pHYs' 2730 9[0m
+[32m PngImagePlugin.py - 28505 - [32m2020-05-07 23:36:53 - [1;36mDEBUG[0m - STREAM b'IDAT' 2751 62785[0m
+[32m infer.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - car position=704 325[0m
+[32m base.py - 28505 - [32m2020-05-07 23:36:53 - [1;32mINFO[0m - [Base        ] Leaving application in progress...[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr: Traceback (most recent call last):[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "infer.py", line 388, in <module>[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     CarApp().run()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "/home/kamran/anaconda3/envs/pytorch_env/lib/python3.7/site-packages/kivy/app.py", line 855, in run[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     runTouchApp()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "/home/kamran/anaconda3/envs/pytorch_env/lib/python3.7/site-packages/kivy/base.py", line 504, in runTouchApp[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     EventLoop.window.mainloop()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "/home/kamran/anaconda3/envs/pytorch_env/lib/python3.7/site-packages/kivy/core/window/window_sdl2.py", line 747, in mainloop[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     self._mainloop()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "/home/kamran/anaconda3/envs/pytorch_env/lib/python3.7/site-packages/kivy/core/window/window_sdl2.py", line 479, in _mainloop[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     EventLoop.idle()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "/home/kamran/anaconda3/envs/pytorch_env/lib/python3.7/site-packages/kivy/base.py", line 339, in idle[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     Clock.tick()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "/home/kamran/anaconda3/envs/pytorch_env/lib/python3.7/site-packages/kivy/clock.py", line 591, in tick[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     self._process_events()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "kivy/_clock.pyx", line 384, in kivy._clock.CyClockBase._process_events[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "kivy/_clock.pyx", line 414, in kivy._clock.CyClockBase._process_events[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "kivy/_clock.pyx", line 412, in kivy._clock.CyClockBase._process_events[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "kivy/_clock.pyx", line 167, in kivy._clock.ClockEvent.tick[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "infer.py", line 331, in update[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     current_state = self.get_state()[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:   File "infer.py", line 236, in get_state[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr:     cv2.imshow("img",s.rotate(90))[0m
+[32m logger.py - [33m28505 - [32m2020-05-07 23:36:53 - [33mWARNING - stderr: AttributeError: 'numpy.ndarray' object has no attribute 'rotate'[0m
