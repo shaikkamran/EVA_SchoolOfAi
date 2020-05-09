@@ -35,25 +35,19 @@ Steps taken.
 
 4.Challenges faced-
 
-6.Doing all these steps on a blank image / map with specific goals helped me solving this issue of car rotating in circles at the same position.[a link]https://www.youtube.com/watch?v=CD-yiaY0uH8&t=55s
+5.Doing all these steps on a blank image / map with specific goals helped me solving this issue of car rotating in circles at the same position.[a link]https://www.youtube.com/watch?v=CD-yiaY0uH8&t=55s
 
-7.Now I found the hyperparameters to be used to train the TD3 algorithm .and the task was to train it on the actual map `mask.png`
+6.Now I found the hyperparameters to be used to train the TD3 algorithm .and the task was to train it on the actual map `mask.png`
 <br>
-8.For this I played with rewards and added rewards for when the car is out of road and other conditions like when it hits the wall.
+7.For this I played with rewards and added rewards for when the car is out of road and other conditions like when it hits the wall.
 <br>
-10.Finally I was able to train my car to reach the specified goals properly but the car sometimes comes out of the road in order to reach the goals fast (This is what I have to fix.And this can be mostly solved by actually tweaking the rewards ).
+8.Finally I was able to train my car to reach the specified goals properly but the car sometimes comes out of the road in order to reach the goals fast (This is what I have to fix.And this can be mostly solved by actually tweaking the rewards ).
 [a link]https://www.youtube.com/watch?v=IEt5RREDBnc
 <br>
-11. Improvements to be done are :-
 
-    * Make the car move on roads to reach the goal whereever it is getting distracted.
-    * This can be done just by tweaking the Reward function.Reward function must be continuous for the gradient optimization.
-    * Something like (1-distance)^(constant) where the constant is 0<constant<=1
-    * Also for maintaining the car on sand the car (1-crop density)* can be multiplied with the above result. 
-
-12. All the training can be done be running ```python map.py```
-13. t3d_small.py is the main file where all the t3d code is written.
-14. inferencing can be simply done by doing ```python infer.py```
+9. All the training can be done be running ```python map.py```
+10. t3d_small.py is the main file where all the t3d code is written.
+11. inferencing can be simply done by doing ```python infer.py```
 
 Requirements python 3.7 with pytorch ,kivy,cv2,numpy,matplotlib  .
 
