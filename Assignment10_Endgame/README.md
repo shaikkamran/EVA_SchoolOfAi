@@ -33,7 +33,8 @@ Steps taken.
 
 3. All the images used for this project can be found in images folder
 
-4.Challenges faced-
+4.Challenges faced-The rewarding function should not be a step function.And negative rewards must not be very out of order .
+I was facing car rotation issue where the car goes on rotating in at the same place .For that i am giving a rotattion penalty and another issue I faced was car hitting the negative terminals.This also was solved by adjusting and tweakig the reward function.(Basically what you teach is what it learns)
 
 5.Doing all these steps on a blank image / map with specific goals helped me solving this issue of car rotating in circles at the same position.[a link]https://www.youtube.com/watch?v=CD-yiaY0uH8&t=55s
 
