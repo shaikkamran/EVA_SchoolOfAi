@@ -1,21 +1,39 @@
 ## Self Driving Car on a City Map using TD3
-For All the code for TD3 and explanation with steps please refer `https://github.com/shaikkamran/Reinforcement_learning-T3D-algorithm`
+For All the code for TD3 and explanation with steps please refer `https://github.com/shaikkamran/Reinforcement_learning-T3D-algorithm`<br>
+
+**Aim** To make our agent/car travel from one goal to another from roads.
+![alt text](https://github.com/shaikkamran/EVA_SchoolOfAi/blob/master/Assignment10_Endgame/images/citymap_with_goals.png)
 
 
-I have done this Project in mainly four steps.
-1. Just a Naive integration of the T3D algorithm with the car (kivy environment ) This was already there.
-2. Figured out the changes required in the environment .
-    
-    * Like changing the car's position when called reset_function
-    * Getting the cropped image of the mask.png with car in place .All of the code for this is there in car_crop_utils.py
-     
-    * Then wrote functions like calculate orientation of the car wrt to the goal.
+**Backgroung Image** The actual image used for training is the hand drawn mask of the above image.
+![alt text](https://github.com/shaikkamran/EVA_SchoolOfAi/blob/master/Assignment10_Endgame/images/MASK1.png)
 
-3. Had change the TD3 actor and critic models to a CNN model which i have made for a varible image input size.Cnn model is the a small network which could give 99.2 percent acc on mnist in 12 epochs..
+- **Environment**-Created by kivy `map.py`
+- **Algorithm**  -Td3 algorithm used for training ```t3d_small.py```
 
-4. All the images used for this project can be found in images folder
+Any Reinforcement learning project consists of environment ,Reward function ,Episode,Action of the agent and its task.
+In our case 
+- **Actions are** - Car's velocity and rotation
+- **Reward function** - A continuous reward function which is like = `(1-distance)^0.4`
+    The reward function is built by taking several other parameters into consideration such as velocity, episode_timesteps etc.
+- **Episode** -In the project one episode gets completed when the car reachess both the goals (positive terminals).Or if it hits the boundaries (walls) negative terminals.
+Steps taken.
+1. Creation of a Kivy environment.<br>
+    Main functions involved are<br> 
+    **get_state and car_crop_utils** (get the current cropped image of the portion where the car is)<br>
+    For cropping PIL library is used.
+    **move** helps car in moving with the values provided (rotation,velocity)<br>
+    **calculate_reward** All the rewarding logic can be found here<br>
+    **reset_env**-reinitialize car at any random point in point in the map.<br>
 
-5.Even after doing this the circling issue persisted.For that I had to include a final fully connected layer in the CNN and also included another parameter which was now an extra parameter called orientation which was getting passed to the Actor model.
+2. Integration of the T3D algorithm .
+   For both the Actor and Critic Bunch of Conv layers + linear layers are written.
+   Idea is the Image (Convolutions) will help our car to stay on the road and other state parameters such as distance and orientation of car towards the goal (Linear) layers will help the car decide the direction  
+   Cnn model is the a small network which could give 99.2 percent acc on mnist in 12 epochs..
+
+3. All the images used for this project can be found in images folder
+
+4.Challenges faced-
 
 6.Doing all these steps on a blank image / map with specific goals helped me solving this issue of car rotating in circles at the same position.[a link]https://www.youtube.com/watch?v=CD-yiaY0uH8&t=55s
 
